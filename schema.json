@@ -45,7 +45,8 @@
         "key": "buttonText",
         "label": "Button text",
         "defaultValue": "Post"
-       },
+      },
+      {
         "type": "boolean",
         "key": "dateRelative",
         "label": "Show absolute date?"
