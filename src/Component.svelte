@@ -6,9 +6,9 @@
   export let table
   export let column
   export let rowId
-  export let dateFormat
-  export let dateRelative
-
+  export let itemName, itemNamePlural, messagePlaceholder, buttonText
+  export let dateFormat, dateRelative
+  
   const { styleable, API, authStore, notificationStore } = getContext("sdk")
   const component = getContext("component")
   const separator = "|"
@@ -19,6 +19,7 @@
   let lastCommentCount = 0
 
   $: table, column, rowId, loadComments()
+  $: itemName, itemNamePlural, messagePlaceholder, buttonText
   $: dateFormat, dateRelative
   $: currentName = `${$authStore.firstName || ""} ${$authStore.lastName || ""}`.trim()
 
@@ -71,7 +72,7 @@
       // Refresh from the server to ensure we're consistent, and to update UI
       await loadComments()
     } catch (error) {
-      notificationStore.actions.error("Failed to save comments")
+      notificationStore.actions.error("Failed to save " + itemNamePlural)
       console.error(error)
     }
   }
@@ -95,7 +96,7 @@
       }
       await saveComments([...existingComments, newComment])
     } catch (error) {
-      notificationStore.actions.error("Failed to add comment")
+      notificationStore.actions.error("Failed to add " + itemName)
       console.error(error)
     }
   }
@@ -109,7 +110,7 @@
       const existingComments = await getComments()
       await saveComments(existingComments.filter(x => x.timestamp !== comment.timestamp))
     } catch (error) {
-      notificationStore.actions.error("Failed to delete comment")
+      notificationStore.actions.error("Failed to delete " + itemName)
       console.error(error)
     }
   }
@@ -131,7 +132,7 @@
 
 <div use:styleable={$component.styles} class="container">
   <div class="title">
-    {comments.length} comment{comments.length === 1 ? "" : "s"}
+    {comments.length} {comments.length <= 1 ? itemName : itemNamePlural}
   </div>
   <div class="comments" bind:this={commentContainer}>
     {#each comments as comment (comment.timestamp)}
@@ -140,10 +141,10 @@
   </div>
   <div class="form">
     <Avatar name={currentName} email={$authStore.email} />
-    <textarea on:keypress={handleKeyPress} bind:value={text} rows="2" placeholder="Add a comment..." />
+    <textarea on:keypress={handleKeyPress} bind:value={text} rows="2" placeholder={messagePlaceholder} />
     <div />
     <div class="button">
-      <button on:click={addComment}>Post</button>
+      <button on:click={addComment}>{buttonText}</button>
     </div>
   </div>
 </div>
