@@ -144,7 +144,7 @@
     <textarea on:keypress={handleKeyPress} bind:value={text} rows="2" placeholder={messagePlaceholder} />
     <div />
     <div class="button">
-      <button on:click={addComment}>{buttonText}</button>
+      <button class="spectrum-Button spectrum-Button--sizeM spectrum-Button--cta" on:click={addComment}>{buttonText}</button>
     </div>
   </div>
 </div>
@@ -199,19 +199,5 @@
   .button {
     display: flex;
     justify-content: flex-end;
-  }
-  button {
-    align-self: flex-end;
-    background: var(--spectrum-global-color-gray-200);
-    border-radius: 16px;
-    padding: 8px 16px;
-    color: var(--spectrum-global-color-gray-900);
-    transition: background 130ms ease-out;
-    font-weight: 500;
-    border: none;
-  }
-  button:hover {
-    background: var(--spectrum-global-color-gray-300);
-    cursor: pointer;
   }
 </style>
