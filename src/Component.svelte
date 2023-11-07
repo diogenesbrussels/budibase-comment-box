@@ -131,6 +131,8 @@
 
       if (!e.shiftKey) {
         addComment();
+      } else {
+        e.target.value += "\n";
       }
     }
   };
