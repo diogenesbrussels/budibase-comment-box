@@ -1,150 +1,177 @@
 <script>
-  import { getContext, afterUpdate } from "svelte"
-  import Avatar from "./Avatar.svelte"
-  import Comment from "./Comment.svelte"
+  import { getContext, afterUpdate } from "svelte";
+  import Avatar from "./Avatar.svelte";
+  import Comment from "./Comment.svelte";
 
-  export let table
-  export let column
-  export let rowId
-  export let itemName, itemNamePlural, messagePlaceholder, buttonText
-  export let dateFormat, dateRelative
-  
-  const { styleable, API, authStore, notificationStore } = getContext("sdk")
-  const component = getContext("component")
-  const separator = "|"
+  export let table;
+  export let column;
+  export let rowId;
+  export let itemName, itemNamePlural, messagePlaceholder, buttonText;
+  export let dateFormat, dateRelative;
 
-  let comments = []
-  let text
-  let commentContainer
-  let lastCommentCount = 0
+  const { styleable, API, authStore, notificationStore } = getContext("sdk");
+  const component = getContext("component");
+  const separator = "|";
 
-  $: table, column, rowId, loadComments()
-  $: itemName, itemNamePlural, messagePlaceholder, buttonText
-  $: dateFormat, dateRelative
-  $: currentName = `${$authStore.firstName || ""} ${$authStore.lastName || ""}`.trim()
+  let comments = [];
+  let text;
+  let commentContainer;
+  let lastCommentCount = 0;
+
+  $: table, column, rowId, loadComments();
+  $: itemName, itemNamePlural, messagePlaceholder, buttonText;
+  $: dateFormat, dateRelative;
+  $: currentName = `${$authStore.firstName || ""} ${
+    $authStore.lastName || ""
+  }`.trim();
 
   const getRow = async () => {
     if (!table?.tableId || !rowId || !column) {
-      return null
+      return null;
     }
-    return await API.fetchRow({ rowId, tableId: table.tableId })
-  }
+    return await API.fetchRow({ rowId, tableId: table.tableId });
+  };
 
   const getComments = async () => {
-    const row = await getRow()
-    const value = row?.[column]
+    const row = await getRow();
+    const value = row?.[column];
     if (typeof value !== "string" || !value?.length) {
-      return []
+      return [];
     }
-    return value.split(separator)
-      .map(atob)
-      .map(escape)
-      .map(decodeURIComponent)
-      .map(JSON.parse) || []
-  }
+    return (
+      value
+        .split(separator)
+        .map(atob)
+        .map(escape)
+        .map(decodeURIComponent)
+        .map(JSON.parse) || []
+    );
+  };
 
   const loadComments = async () => {
     try {
-      comments = await getComments()
+      comments = await getComments();
     } catch (error) {
-      comments = []
+      comments = [];
     }
-  }
+  };
 
-  const saveComments = async comments => {
+  const saveComments = async (comments) => {
     if (!Array.isArray(comments)) {
-      return null
+      return null;
     }
     try {
       // Encode the array of comments
-      const encoded = comments.map(JSON.stringify)
+      const encoded = comments
+        .map(JSON.stringify)
         .map(encodeURIComponent)
-        .map(unescape).map(btoa)
-        .join(separator)
+        .map(unescape)
+        .map(btoa)
+        .join(separator);
 
       // Update row
-      const row = await getRow()
+      const row = await getRow();
       await API.saveRow({
         ...row,
-        [column]: encoded
-      })
+        [column]: encoded,
+      });
 
       // Refresh from the server to ensure we're consistent, and to update UI
-      await loadComments()
+      await loadComments();
     } catch (error) {
-      notificationStore.actions.error("Failed to save " + itemNamePlural)
-      console.error(error)
+      notificationStore.actions.error("Failed to save " + itemNamePlural);
+      console.error(error);
     }
-  }
+  };
 
   const addComment = async () => {
     if (!text?.trim().length) {
-      return
+      return;
     }
     try {
       // Clear state
-      const message = text.trim()
-      text = null
+      const message = text.trim();
+      text = null;
 
       // Create and save new comment
-      const existingComments = await getComments()
+      const existingComments = await getComments();
       const newComment = {
         message,
-        email:  $authStore.email,
+        email: $authStore.email,
         name: currentName,
-        timestamp: Date.now()
-      }
-      await saveComments([...existingComments, newComment])
+        timestamp: Date.now(),
+      };
+      await saveComments([...existingComments, newComment]);
     } catch (error) {
-      notificationStore.actions.error("Failed to add " + itemName)
-      console.error(error)
+      notificationStore.actions.error("Failed to add " + itemName);
+      console.error(error);
     }
-  }
+  };
 
-  const deleteComment = async comment => {
+  const deleteComment = async (comment) => {
     if (!comment?.timestamp) {
-      return
+      return;
     }
     try {
       // Fetch existing comments and filter out this one
-      const existingComments = await getComments()
-      await saveComments(existingComments.filter(x => x.timestamp !== comment.timestamp))
+      const existingComments = await getComments();
+      await saveComments(
+        existingComments.filter((x) => x.timestamp !== comment.timestamp)
+      );
     } catch (error) {
-      notificationStore.actions.error("Failed to delete " + itemName)
-      console.error(error)
+      notificationStore.actions.error("Failed to delete " + itemName);
+      console.error(error);
     }
-  }
+  };
 
-  const handleKeyPress = e => {
+  const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault()
-      addComment()
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!e.shiftKey) {
+        addComment();
+      }
     }
-  }
+  };
 
   afterUpdate(() => {
     if (comments.length !== lastCommentCount) {
-      commentContainer.scrollTop = commentContainer.scrollHeight
-      lastCommentCount = comments.length
+      commentContainer.scrollTop = commentContainer.scrollHeight;
+      lastCommentCount = comments.length;
     }
-  })
+  });
 </script>
 
 <div use:styleable={$component.styles} class="container">
   <div class="title">
-    {comments.length} {comments.length <= 1 ? itemName : itemNamePlural}
+    {comments.length}
+    {comments.length <= 1 ? itemName : itemNamePlural}
   </div>
   <div class="comments" bind:this={commentContainer}>
     {#each comments as comment (comment.timestamp)}
-      <Comment {comment} destroy={() => deleteComment(comment)} dateFormat={dateFormat} dateRelative={dateRelative} />
+      <Comment
+        {comment}
+        destroy={() => deleteComment(comment)}
+        {dateFormat}
+        {dateRelative}
+      />
     {/each}
   </div>
   <div class="form">
     <Avatar name={currentName} email={$authStore.email} />
-    <textarea on:keypress={handleKeyPress} bind:value={text} rows="2" placeholder={messagePlaceholder} />
+    <textarea
+      on:keypress={handleKeyPress}
+      bind:value={text}
+      rows="2"
+      placeholder={messagePlaceholder}
+    />
     <div />
     <div class="button">
-      <button class="spectrum-Button spectrum-Button--sizeM spectrum-Button--cta" on:click={addComment}>{buttonText}</button>
+      <button
+        class="spectrum-Button spectrum-Button--sizeM spectrum-Button--cta"
+        on:click={addComment}>{buttonText}</button
+      >
     </div>
   </div>
 </div>
