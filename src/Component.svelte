@@ -116,7 +116,7 @@
       // Fetch existing comments and filter out this one
       const existingComments = await getComments();
       await saveComments(
-        existingComments.filter((x) => x.timestamp !== comment.timestamp)
+        existingComments.filter((x) => x.timestamp !== comment.timestamp),
       );
     } catch (error) {
       notificationStore.actions.error("Failed to delete " + itemName);
@@ -128,12 +128,7 @@
     if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
-
-      if (!e.shiftKey) {
-        addComment();
-      } else {
-        e.target.value += "\n";
-      }
+      e.target.value += "\n";
     }
   };
 
