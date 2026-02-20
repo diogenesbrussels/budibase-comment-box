@@ -13,7 +13,7 @@
     "@budibase/bbui": "^2.0.6",
     "@crownframework/svelte-error-boundary": "^1.0.3",
     "dayjs": "^1.11.5",
-    "svelte": "^3.49.0"
+    "svelte": "^5.51.5"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^18.0.0",
